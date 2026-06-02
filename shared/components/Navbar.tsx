@@ -10,7 +10,7 @@ const navLinks = [
 export function Navbar() {
   return (
     <header className="border-b border-zinc-200 bg-white/80 backdrop-blur">
-      <nav className="mx-auto flex w-full max-w-6xl items-center justify-between px-6 py-4">
+      <nav className="mx-auto flex w-full max-w-5xl items-center justify-between px-4 py-4">
         <div className="flex flex-col">
           <span className="text-xs font-semibold uppercase tracking-[0.3em] text-zinc-500">
             Associacao

@@ -1,1 +1,1 @@
-export { AdminView } from "./views/AdminView";
+export { AdminView, AdminLoginView } from "./views";

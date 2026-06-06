@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type { AdminPanelData } from "@/lib/db/admin";
 import { CompetitionAutomationPanel } from "./CompetitionAutomationPanel";
@@ -19,6 +19,15 @@ const inputClassName =
 
 const selectClassName =
   "w-full rounded-xl border border-white/10 bg-white px-4 py-3 text-sm text-black outline-none focus:border-amber-300/60";
+
+const primaryButtonClassName =
+  "inline-flex items-center justify-center rounded-full bg-amber-300 px-5 py-3 text-sm font-semibold text-zinc-950 transition duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-amber-300/20 active:translate-y-0 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60";
+
+const secondaryButtonClassName =
+  "inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition duration-200 hover:-translate-y-0.5 hover:bg-white/10 active:translate-y-0 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60";
+
+const dangerButtonClassName =
+  "inline-flex items-center justify-center rounded-full border border-red-400/30 bg-red-500/10 px-4 py-2 text-xs font-semibold text-red-200 transition duration-200 hover:-translate-y-0.5 hover:bg-red-500/20 active:translate-y-0 active:scale-95 disabled:cursor-not-allowed disabled:opacity-60";
 
 type AdminViewProps = {
   initialData: AdminPanelData;
@@ -77,6 +86,7 @@ export function AdminView({ initialData, currentAdmin }: AdminViewProps) {
   const [activeSection, setActiveSection] = useState<(typeof sections)[number]["key"]>("competitions");
   const [editingRecord, setEditingRecord] = useState<SidebarRecord | null>(null);
   const [logoutLoading, setLogoutLoading] = useState(false);
+  const [feedback, setFeedback] = useState<{ kind: "success" | "error"; message: string } | null>(null);
 
   const ownerId = currentAdmin.uid;
 
@@ -109,6 +119,17 @@ export function AdminView({ initialData, currentAdmin }: AdminViewProps) {
     [initialData.matches],
   );
 
+  useEffect(() => {
+    if (!feedback) return undefined;
+
+    const timeout = window.setTimeout(() => setFeedback(null), 3200);
+    return () => window.clearTimeout(timeout);
+  }, [feedback]);
+
+  function showFeedback(kind: "success" | "error", message: string) {
+    setFeedback({ kind, message });
+  }
+
   const sidebarRecords = useMemo<SidebarRecord[]>(() => {
     switch (activeSection) {
       case "competitions":
@@ -121,7 +142,7 @@ export function AdminView({ initialData, currentAdmin }: AdminViewProps) {
       case "athletes":
         return initialData.athletes.map((athlete) => ({
           id: athlete.id,
-          label: `${athlete.nome} ${athlete.sobrenome}`,
+          label: `${athlete.nome} ${athlete.sobrenome} - ${athlete.sexo}`,
           resource: "athlete",
           data: athlete,
         }));
@@ -151,6 +172,7 @@ export function AdminView({ initialData, currentAdmin }: AdminViewProps) {
     setLogoutLoading(true);
     try {
       await fetch("/api/auth/logout", { method: "POST" });
+      showFeedback("success", "Sessao encerrada com sucesso.");
       router.push("/admin/login");
       router.refresh();
     } finally {
@@ -169,13 +191,14 @@ export function AdminView({ initialData, currentAdmin }: AdminViewProps) {
       if (!response.ok) {
         const data = (await response.json().catch(() => null)) as { error?: string; details?: string; hint?: string } | null;
         const message = data?.error ?? "Falha ao salvar registro.";
-        window.alert(data?.details ? `${message}\n${data.details}${data.hint ? `\n${data.hint}` : ""}` : message);
+        showFeedback("error", data?.details ? `${message} ${data.details}${data.hint ? ` ${data.hint}` : ""}` : message);
         return;
       }
 
+      showFeedback("success", "Registro salvo com sucesso.");
       router.refresh();
     } catch {
-      window.alert("Nao foi possivel conectar ao servidor.");
+      showFeedback("error", "Nao foi possivel conectar ao servidor.");
     }
   }
 
@@ -190,13 +213,14 @@ export function AdminView({ initialData, currentAdmin }: AdminViewProps) {
       if (!response.ok) {
         const data = (await response.json().catch(() => null)) as { error?: string; details?: string; hint?: string } | null;
         const message = data?.error ?? "Falha ao atualizar registro.";
-        window.alert(data?.details ? `${message}\n${data.details}${data.hint ? `\n${data.hint}` : ""}` : message);
+        showFeedback("error", data?.details ? `${message} ${data.details}${data.hint ? ` ${data.hint}` : ""}` : message);
         return;
       }
 
+      showFeedback("success", "Registro atualizado com sucesso.");
       router.refresh();
     } catch {
-      window.alert("Nao foi possivel conectar ao servidor.");
+      showFeedback("error", "Nao foi possivel conectar ao servidor.");
     }
   }
 
@@ -211,7 +235,7 @@ export function AdminView({ initialData, currentAdmin }: AdminViewProps) {
       if (!response.ok) {
         const data = (await response.json().catch(() => null)) as { error?: string; details?: string; hint?: string } | null;
         const message = data?.error ?? "Falha ao remover registro.";
-        window.alert(data?.details ? `${message}\n${data.details}${data.hint ? `\n${data.hint}` : ""}` : message);
+        showFeedback("error", data?.details ? `${message} ${data.details}${data.hint ? ` ${data.hint}` : ""}` : message);
         return;
       }
 
@@ -219,9 +243,10 @@ export function AdminView({ initialData, currentAdmin }: AdminViewProps) {
         setEditingRecord(null);
       }
 
+      showFeedback("success", "Registro removido com sucesso.");
       router.refresh();
     } catch {
-      window.alert("Nao foi possivel conectar ao servidor.");
+      showFeedback("error", "Nao foi possivel conectar ao servidor.");
     }
   }
 
@@ -233,9 +258,13 @@ export function AdminView({ initialData, currentAdmin }: AdminViewProps) {
       return;
     }
 
-    const parsed = JSON.parse(nextValue) as Record<string, unknown>;
-    delete parsed.id;
-    await updateRecord(record.resource, record.id, parsed);
+    try {
+      const parsed = JSON.parse(nextValue) as Record<string, unknown>;
+      delete parsed.id;
+      await updateRecord(record.resource, record.id, parsed);
+    } catch {
+      showFeedback("error", "JSON invalido para edicao rapida.");
+    }
   }
 
   return (
@@ -246,20 +275,30 @@ export function AdminView({ initialData, currentAdmin }: AdminViewProps) {
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.5em] text-amber-200/80">Painel administrativo</p>
               <h1 className="mt-3 text-3xl font-semibold text-white sm:text-4xl">Gestao completa de competicoes</h1>
-              <p className="mt-3 max-w-3xl text-sm leading-6 text-zinc-300">Cadastro e manutencao dos dados do sistema diretamente no backend.</p>
-              <p className="mt-3 text-xs uppercase tracking-[0.35em] text-zinc-500">Logado como {currentAdmin.nome} ({currentAdmin.login})</p>
             </div>
 
             <button
               type="button"
               onClick={handleLogout}
               disabled={logoutLoading}
-              className="inline-flex items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60"
+              className={secondaryButtonClassName}
             >
               {logoutLoading ? "Saindo..." : "Sair"}
             </button>
           </div>
         </header>
+
+        {feedback ? (
+          <div
+            className={`fixed bottom-6 right-6 z-50 max-w-sm rounded-2xl border px-4 py-3 text-sm shadow-2xl transition ${
+              feedback.kind === "success"
+                ? "border-emerald-400/30 bg-emerald-500/15 text-emerald-50"
+                : "border-red-400/30 bg-red-500/15 text-red-50"
+            }`}
+          >
+            {feedback.message}
+          </div>
+        ) : null}
 
         <nav className="flex flex-wrap gap-3 rounded-2xl border border-white/10 bg-white/5 p-3">
           {sections.map((section) => (
@@ -270,7 +309,7 @@ export function AdminView({ initialData, currentAdmin }: AdminViewProps) {
                 setActiveSection(section.key);
                 setEditingRecord(null);
               }}
-              className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+              className={`rounded-full px-4 py-2 text-sm font-medium transition duration-200 hover:-translate-y-0.5 active:scale-95 ${
                 activeSection === section.key
                   ? "bg-white text-zinc-950"
                   : "bg-transparent text-zinc-300 hover:bg-white/10 hover:text-white"
@@ -348,7 +387,7 @@ export function AdminView({ initialData, currentAdmin }: AdminViewProps) {
                           setEditingRecord(record);
                           handleQuickEdit(record).catch(() => undefined);
                         }}
-                        className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-zinc-950"
+                          className="rounded-full bg-white px-4 py-2 text-xs font-semibold text-zinc-950 transition duration-200 hover:-translate-y-0.5 active:scale-95"
                       >
                         Editar
                       </button>
@@ -357,7 +396,7 @@ export function AdminView({ initialData, currentAdmin }: AdminViewProps) {
                         onClick={() => {
                           void deleteRecord(record.resource, record.id);
                         }}
-                        className="rounded-full border border-red-400/30 bg-red-500/10 px-4 py-2 text-xs font-semibold text-red-200"
+                        className={dangerButtonClassName}
                       >
                         Excluir
                       </button>
@@ -376,6 +415,7 @@ export function AdminView({ initialData, currentAdmin }: AdminViewProps) {
 
         {activeSection === "competitions" ? (
           <CompetitionAutomationPanel
+            clubs={initialData.clubs}
             competitions={initialData.competitions}
             groups={initialData.groups}
             athletes={initialData.athletes}
@@ -411,8 +451,8 @@ function FieldShell({
       <p className="mt-2 text-sm leading-6 text-zinc-300">{description}</p>
       <div className="mt-6 grid gap-4">{children}</div>
       <div className="mt-6 flex flex-wrap gap-3">
-        <button type="submit" className="rounded-full bg-amber-300 px-5 py-2 text-sm font-semibold text-zinc-950">{submitLabel}</button>
-        <button type="reset" className="rounded-full border border-white/10 px-5 py-2 text-sm font-semibold text-white">Limpar</button>
+        <button type="submit" className={primaryButtonClassName}>{submitLabel}</button>
+        <button type="reset" className={secondaryButtonClassName}>Limpar</button>
       </div>
     </div>
   );
@@ -478,7 +518,6 @@ function CompetitionForm({
       id_modalidade: Number(formData.get("id_modalidade")),
       id_categoria: Number(formData.get("id_categoria")),
       id_usuario: ownerId,
-      status: String(formData.get("status") ?? ""),
     };
 
     if (competition) {
@@ -491,12 +530,11 @@ function CompetitionForm({
   return (
     <form onSubmit={handleSubmit}>
       <FieldShell title="Competicoes" description="Cadastrar ou editar competicoes." submitLabel={isEditing ? "Atualizar" : "Salvar"}>
-        <TextField label="Nome da competicao" name="nome" placeholder="Nome da competicao" defaultValue={competition?.nome} />
+          <TextField label="Nome da competicao" name="nome" placeholder="Nome da competicao" defaultValue={competition?.nome} />
         <div className="grid gap-4 sm:grid-cols-2">
           <SelectField label="Modalidade" name="id_modalidade" options={modalityOptions} placeholder="Selecione a modalidade" defaultValue={competition ? String(competition.id_modalidade) : ""} />
           <SelectField label="Categoria" name="id_categoria" options={categoryOptions} placeholder="Selecione a categoria" defaultValue={competition ? String(competition.id_categoria) : ""} />
         </div>
-        <TextField label="Status" name="status" placeholder="Status" defaultValue={competition?.status} />
       </FieldShell>
     </form>
   );
@@ -521,6 +559,7 @@ function AthleteForm({
     const payload = {
       nome: String(formData.get("nome") ?? ""),
       sobrenome: String(formData.get("sobrenome") ?? ""),
+      sexo: String(formData.get("sexo") ?? ""),
       idade: Number(formData.get("idade")),
       id_clube: Number(formData.get("id_clube")),
     };
@@ -540,6 +579,7 @@ function AthleteForm({
           <TextField label="Sobrenome" name="sobrenome" placeholder="Sobrenome" defaultValue={athlete?.sobrenome} />
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
+          <TextField label="Sexo" name="sexo" placeholder="Sexo" defaultValue={athlete?.sexo} />
           <TextField label="Idade" name="idade" placeholder="Idade" type="number" defaultValue={athlete?.idade ?? ""} />
           <SelectField label="Clube" name="id_clube" options={clubOptions} placeholder="Selecione o clube" defaultValue={athlete ? String(athlete.id_clube) : ""} />
         </div>

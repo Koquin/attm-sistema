@@ -7,6 +7,7 @@ export type Clube = {
 export type Atleta = {
   id: number;
   id_clube: number;
+  sexo: string;
   nome: string;
   sobrenome: string;
   idade: number;

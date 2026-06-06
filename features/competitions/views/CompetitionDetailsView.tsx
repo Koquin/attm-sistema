@@ -7,10 +7,11 @@ import { CompetitionBracket } from "../components/CompetitionBracket";
 import { CompetitionTabs } from "../components/CompetitionTabs";
 import { GroupMatchesTable } from "../components/GroupMatchesTable";
 import { MatchesList } from "../components/MatchesList";
-import { useCompetitionDetailsViewModel } from "../viewmodels/useCompetitionDetailsViewModel";
+import type { Competition, CompetitionDetails } from "../types";
 
 type CompetitionDetailsViewProps = {
-  competitionId: string;
+  competition: Competition;
+  details: CompetitionDetails;
 };
 
 const tabs = [
@@ -21,23 +22,10 @@ const tabs = [
 ];
 
 export function CompetitionDetailsView({
-  competitionId,
+  competition,
+  details,
 }: CompetitionDetailsViewProps) {
   const [activeTab, setActiveTab] = useState("athletes");
-  const { competition, details } = useCompetitionDetailsViewModel(competitionId);
-
-  if (!competition || !details) {
-    return (
-      <div className="mx-auto w-full max-w-5xl px-6 py-16">
-        <h1 className="text-2xl font-semibold text-zinc-900">
-          Competicao nao encontrada
-        </h1>
-        <p className="mt-2 text-sm text-zinc-600">
-          Verifique o link ou volte para a lista de competicoes.
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-10">
@@ -52,8 +40,9 @@ export function CompetitionDetailsView({
           <p>Categoria: {competition.category}</p>
           <p>Modalidade: {competition.modality}</p>
           <p>Status: {competition.status}</p>
-          <p>Local: {competition.location}</p>
-          <p>Data: {competition.date}</p>
+          <p>Grupos: {competition.groupCount}</p>
+          <p>Partidas: {competition.matchCount}</p>
+          <p>Criada em: {competition.createdAt}</p>
         </div>
         <p className="mt-4 text-sm text-zinc-600">{details.about}</p>
       </header>

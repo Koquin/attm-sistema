@@ -16,8 +16,9 @@ export function CompetitionCard({ competition }: CompetitionCardProps) {
           <p>Categoria: {competition.category}</p>
           <p>Modalidade: {competition.modality}</p>
           <p>Status: {competition.status}</p>
-          <p>Local: {competition.location}</p>
-          <p>Data: {competition.date}</p>
+          <p>Grupos: {competition.groupCount}</p>
+          <p>Partidas: {competition.matchCount}</p>
+          <p>Criada em: {competition.createdAt}</p>
         </div>
       </div>
       <Link

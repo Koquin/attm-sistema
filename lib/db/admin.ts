@@ -146,7 +146,7 @@ export async function deleteAdminRecord(resource: AdminResource, id: number) {
   }
 }
 
-export async function upsertRegistration(payload: Omit<Inscricao, "id" | "inscricao_confirmada">) {
+export async function upsertRegistration(payload: Omit<Inscricao, "id">) {
   const { data: existing, error: existingError } = await supabaseServer
     .from("inscricao")
     .select("id")
@@ -160,7 +160,7 @@ export async function upsertRegistration(payload: Omit<Inscricao, "id" | "inscri
 
   const registrationPayload = {
     ...payload,
-    inscricao_confirmada: true,
+    inscricao_confirmada: payload.inscricao_confirmada ?? false,
   };
 
   if (existing) {

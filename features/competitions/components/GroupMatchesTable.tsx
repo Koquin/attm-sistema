@@ -10,9 +10,9 @@ export function GroupMatchesTable({ matches }: GroupMatchesTableProps) {
       <table className="w-full text-left text-sm">
         <thead className="bg-zinc-50 text-xs uppercase tracking-wider text-zinc-500">
           <tr>
-            <th className="px-4 py-3">Grupo</th>
+            <th className="px-4 py-3">Fase</th>
             <th className="px-4 py-3">Jogo</th>
-            <th className="px-4 py-3">Horario</th>
+            <th className="px-4 py-3">Placar</th>
             <th className="px-4 py-3">Status</th>
           </tr>
         </thead>
@@ -23,12 +23,12 @@ export function GroupMatchesTable({ matches }: GroupMatchesTableProps) {
               className="border-t border-zinc-200 text-zinc-700"
             >
               <td className="px-4 py-3 font-medium text-zinc-900">
-                {match.group}
+                {match.round}
               </td>
               <td className="px-4 py-3">
                 {match.home} x {match.away}
               </td>
-              <td className="px-4 py-3">{match.scheduledAt}</td>
+              <td className="px-4 py-3">{match.score}</td>
               <td className="px-4 py-3">{match.status}</td>
             </tr>
           ))}

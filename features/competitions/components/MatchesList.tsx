@@ -15,6 +15,9 @@ export function MatchesList({ games }: MatchesListProps) {
           <h4 className="text-sm font-semibold text-zinc-900">
             {game.round}
           </h4>
+          <p className="mt-1 text-xs uppercase tracking-[0.2em] text-zinc-500">
+            {game.status}
+          </p>
           <div className="mt-4 overflow-x-auto">
             <div
               className="grid min-w-[360px] items-center gap-2"
@@ -53,6 +56,7 @@ export function MatchesList({ games }: MatchesListProps) {
               ))}
             </div>
           </div>
+          <p className="mt-4 text-sm text-zinc-600">Placar final: {game.score}</p>
         </div>
       ))}
     </div>

@@ -9,6 +9,7 @@ create table if not exists clube (
 create table if not exists atleta (
   id bigint generated always as identity primary key,
   id_clube bigint not null references clube(id) on update cascade on delete restrict,
+  sexo text not null default 'Nao informado',
   nome text not null,
   sobrenome text not null,
   idade integer not null check (idade >= 0)
@@ -38,7 +39,7 @@ create table if not exists competicao (
   id_usuario uuid not null,
   nome text not null,
   created_at timestamptz not null default now(),
-  status text not null
+  status text not null default 'Aguardando inscricoes' check (status in ('Aguardando inscricoes', 'Em andamento', 'Finalizado'))
 );
 
 create table if not exists grupo (
@@ -153,28 +154,24 @@ before insert on resultado_partida
 for each row
 execute function trigger_3_resultado_unico_por_partida();
 
-create or replace function trigger_4_delete_partida_without_group()
+create or replace function trigger_4_delete_partidas_by_group()
 returns trigger
 language plpgsql
 as $$
 begin
-  if new.id_grupo is null and old.id_grupo is not null then
-    delete from partida
-    where id = new.id;
-    return null;
-  end if;
+  delete from partida
+  where id_grupo = old.id;
 
-  return new;
+  return old;
 end;
 $$;
 
-drop trigger if exists trg_partida_delete_without_group on partida;
+drop trigger if exists trg_grupo_delete_partidas on grupo;
 
-create trigger trg_partida_delete_without_group
-after update of id_grupo on partida
+create trigger trg_grupo_delete_partidas
+before delete on grupo
 for each row
-when (old.id_grupo is not null and new.id_grupo is null)
-execute function trigger_4_delete_partida_without_group();
+execute function trigger_4_delete_partidas_by_group();
 
 -- Useful indexes
 create index if not exists idx_atleta_id_clube on atleta(id_clube);

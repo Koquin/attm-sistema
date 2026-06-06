@@ -69,20 +69,18 @@ export async function POST(request: Request) {
         id_atleta?: unknown;
         id_competicao?: unknown;
         id_grupo?: unknown;
+        inscricao_confirmada?: unknown;
       };
 
-      if (
-        typeof payload.id_atleta !== "number" ||
-        typeof payload.id_competicao !== "number" ||
-        typeof payload.id_grupo !== "number"
-      ) {
+      if (typeof payload.id_atleta !== "number" || typeof payload.id_competicao !== "number") {
         return NextResponse.json({ error: "Requisicao invalida." }, { status: 400 });
       }
 
       const data = await upsertRegistration({
         id_atleta: payload.id_atleta,
         id_competicao: payload.id_competicao,
-        id_grupo: payload.id_grupo,
+        id_grupo: typeof payload.id_grupo === "number" ? payload.id_grupo : null,
+        inscricao_confirmada: typeof payload.inscricao_confirmada === "boolean" ? payload.inscricao_confirmada : false,
       });
 
       return NextResponse.json({ ok: true, data });

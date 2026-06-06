@@ -19,7 +19,7 @@ export function AthletesTable({ athletes }: AthletesTableProps) {
         <tbody>
           {athletes.map((athlete) => (
             <tr
-              key={athlete.name}
+              key={`${athlete.name}-${athlete.club}`}
               className="border-t border-zinc-200 text-zinc-700"
             >
               <td className="px-4 py-3 font-medium text-zinc-900">
